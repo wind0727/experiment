@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.sys.dao.CityDao">
+    
+	<sql id="cityColumns">
+		a.city_id AS "cityId",
+		a.province_id AS "provinceId",
+		a.city_name AS "cityName",
+		a.remark AS "remark"
+	</sql>
+	
+	<sql id="cityJoins">
+	</sql>
+    
+	<select id="get" resultType="City">
+		SELECT 
+			<include refid="cityColumns"/>
+		FROM city a
+		<include refid="cityJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="City">
+		SELECT 
+			<include refid="cityColumns"/>
+		FROM city a
+		<include refid="cityJoins"/>
+		<where>
+			
+			<if test="provinceId != null and provinceId != ''">
+				AND a.province_id = #{provinceId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="City">
+		SELECT 
+			<include refid="cityColumns"/>
+		FROM city a
+		<include refid="cityJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO city(
+			city_id,
+			province_id,
+			city_name,
+			remark
+		) VALUES (
+			#{cityId},
+			#{provinceId},
+			#{cityName},
+			#{remark}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE city SET 	
+			province_id = #{provinceId},
+			city_name = #{cityName},
+			remark = #{remark}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM city
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

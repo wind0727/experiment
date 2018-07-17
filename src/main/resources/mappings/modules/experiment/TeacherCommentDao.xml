@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.TeacherCommentDao">
+
+    <resultMap id="experimentRecord" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentRecord">
+		<result property="teacherId" column="teacherId" />
+	</resultMap>
+	
+	<resultMap id="appointmentResult" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentAppointment">
+		
+	</resultMap>
+	
+	<resultMap id="appointmentResultVO" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentAppointmentVO">
+	
+	</resultMap>
+	
+	<resultMap id="experimentInfo" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentInfo">
+		
+	</resultMap>
+	
+	<sql id="experimentRecordColumns">
+		a.id AS "id",
+		a.student_id AS "studentId",
+		a.student_id AS  studentId ,
+		a.experiment_info_id AS "experimentInfoId",
+		a.experiment_appointment_id AS "experimentAppointmentId",
+		a.teacher_name AS teacherName,
+		a.experiment_name AS experimentName,
+		a.teacher_id AS "teacherId",
+		a.experiment_problem AS "experimentProblem",
+		a.experiment_completion AS "experimentCompletion",
+		a.experiment_score AS "experimentScore",
+		a.experiment_comment AS "experimentComment",
+		a.create_by AS "createById",
+		a.create_date AS "createDate",
+		a.update_by AS "updateById",
+		a.update_date AS "updateDate"
+	</sql>
+	
+	<sql id="experimentRecordJoins">
+	</sql>
+    
+	<select id="get" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+		<include refid="experimentRecordJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getTeacherNameById" resultType="String">
+		SELECT 
+			u.name 
+		FROM
+			sys_user u 
+		WHERE id =#{teacherId} 
+	</select>
+	
+	<select id="getExperimentInfoIdNameById" resultType="String">
+		SELECT 
+			ex.experiment_name AS experimentName
+		FROM
+			experiment_info ex 
+		WHERE id = #{experimentInfoId}
+	</select>
+	
+	<select id="findList" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+		<include refid="experimentRecordJoins"/>
+		<where>
+			<if test="experimentInfoId != null and experimentInfoId != ''">
+				AND a.experiment_info_id = #{experimentInfoId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+		<include refid="experimentRecordJoins"/>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO experiment_record(
+			id,
+			student_id,
+			experiment_info_id,
+			experiment_name,
+			teacher_name,
+			experiment_appointment_id,
+			teacher_id,
+			experiment_problem,
+			experiment_completion,
+			experiment_score,
+			experiment_comment,
+			create_by,
+			create_date,
+			update_by,
+			update_date
+		) VALUES (
+			#{id},
+			#{studentId},
+			#{experimentInfoId},
+			#{experimentName},
+			#{teacherName},
+			#{experimentAppointmentId},
+			#{teacherId},
+			#{experimentProblem},
+			#{experimentCompletion},
+			#{experimentScore},
+			#{experimentComment},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate}
+		)
+	</insert>
+	<insert id="saveAppoimentHistory">
+	 INSERT INTO experiment_appointment_his (
+	    id,
+	    student_id,
+	    experiment_info_id,
+	    experiment_arrange_id,
+	    approve_status,
+	    is_join,
+	    is_finish,
+	    create_by,
+	    create_date,
+	    update_by,
+	    update_date
+	  ) 
+	  VALUES
+	    (
+	      #{id},
+	      #{studentId},
+	      #{experimentInfoId},
+	      #{experimentArrangeId},
+	      #{approveStatus},
+	      #{isJoin},
+	      #{isFinish},
+	      #{createBy},
+	      #{createDate},
+	      #{updateBy},
+	      #{updateDate}
+	    )
+	</insert> 
+	
+	<insert id="saveHistory">
+		INSERT INTO experiment_record_his(
+		      id,
+			  student_id,
+			  experiment_info_id,
+			  experiment_name,
+			  teacher_name,
+			  experiment_appointment_id,
+			  teacher_id,
+			  experiment_problem,
+			  experiment_completion,
+			  experiment_score,
+			  experiment_comment,
+			  experiment_starttime,
+			  experiment_endtime,
+			  create_by,
+			  create_date,
+			  update_by,
+			  update_date
+		) VALUES (
+		    #{id},
+			#{studentId},
+			#{ experimentInfoId},
+			#{experimentName},
+			#{teacherName},
+			#{experimentAppointmentId},
+			#{teacherId},
+			#{experimentProblem},
+			#{experimentCompletion},
+			#{experimentScore},
+			#{experimentComment},
+			#{ experimentStarttime},
+			#{experimentEndtime},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE experiment_record SET 	
+			experiment_info_id = #{experimentInfoId},
+			teacher_id = #{teacherId},
+			experiment_problem = #{experimentProblem},
+			experiment_completion = #{experimentCompletion},
+			experiment_score = #{experimentScore},
+			experiment_comment = #{experimentComment},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateScore">
+		UPDATE experiment_record SET 	
+			experiment_score = #{experimentScore},
+			experiment_comment = #{experimentComment}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="setAppointmentIdFinsh">
+		UPDATE 
+		    experiment_appointment 
+		  SET
+		    is_finish = "2" 
+		  WHERE id = 
+		    (SELECT 
+		      experiment_appointment_id 
+		    FROM
+		      experiment_record 
+		    WHERE id =#{id} ) 
+	</update> 
+	
+	<update id="delete">
+		DELETE FROM experiment_record
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 教师评估 -->
+	<select id="getTeacherCommentByCondition" resultMap="experimentRecord">
+			SELECT 
+			  ea.id AS experimentAppointmentId,
+			  ear.teacher_name AS teacherName,
+			  ear.teacher_id AS teacherId,
+			  vs.user_name AS studentName,
+			  vs.user_id AS studentId,
+			  vs.office_name AS officeName,
+			  vs.parent_id AS parentId,
+			  ei.experiment_name,
+			  ear.laboratory_address,
+			  ear.experiment_starttime,
+			  ear.count 
+			FROM
+			  experiment_appointment ea,
+			  experiment_info ei,
+			  experiment_arrange ear,
+			  v_student vs 
+			WHERE ea.experiment_info_id = ei.id 
+			  AND ei.id = ear.experiment_info_id 
+			  AND ea.experiment_arrange_id = ear.id 
+			  AND ea.student_id = vs.user_id 
+			  AND approve_status = 1 
+			  AND ear.teacher_id = #{officeId} 
+	</select>
+	
+	<!-- 查询实验预约相关信息 -->
+	<select id="getStuedntInfoVOByCondition" resultMap="experimentRecord">
+			SELECT 
+			  id AS id,
+			  student_id AS studentId,
+			  experiment_name AS experimentName,
+			  teacher_name AS teacherName,
+			  experiment_score AS experimentScore,
+			  experiment_completion AS experimentCompletion,
+			  experiment_problem AS experimentProblem,
+              experiment_info_id AS experimentInfoId ,
+              experiment_comment AS experimentComment
+			FROM
+			  experiment_record 
+			WHERE teacher_id = #{teacherId}
+		    <if test="experimentInfoId != null and experimentInfoId != ''">
+				AND experiment_info_id = #{experimentInfoId}
+			</if>	
+			<if test="experimentStarttime != null and experimentEndtime == null">
+				AND experiment_starttime &gt; #{experimentStarttime}
+			</if>
+			<if test="experimentStarttime == null and experimentEndtime != null">
+				AND experiment_starttime &lt; #{experimentEndtime} 
+			</if>
+			<if test="experimentStarttime != null and experimentEndtime != null">
+				AND experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+			</if>
+	
+			<choose>
+				<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+					ORDER BY ${page.orderBy}
+				</when>
+				<otherwise>
+					ORDER BY update_date DESC
+				</otherwise>
+			</choose>   
+	</select>
+	
+      <!--  获取实验名称 -->
+	<select id="getExperimentInfoName" resultMap="experimentInfo">
+		SELECT 
+		  id,
+		  experiment_Name 
+		FROM
+		  experiment_info 
+		WHERE id IN 
+		  (SELECT 
+		    experiment_info_id 
+		  FROM
+		    experiment_record 
+		  WHERE teacher_id = #{teacherId}) 
+		  AND del_flag = '0' 
+		ORDER BY update_date DESC   
+	</select>
+	
+	<select id="findExperimentAndTeacherInfoByCondition" resultMap="appointmentResultVO">
+		SELECT 
+		  eap.experiment_info_id AS experimentInfoId,
+		  ear.teacher_id AS teacherId
+		FROM
+		  experiment_appointment eap,
+		  experiment_arrange ear 
+		WHERE eap.experiment_arrange_id = ear.id 
+		  AND eap.id = #{experimentAppointmentId}
+	</select>
+	
+	<select id="getExperimentInfoIdByappointmentId"  resultType="String">
+		SELECT 
+			experiment_info_id AS experimentInfoId
+		FROM
+			experiment_appointment 
+		WHERE id =#{experimentAppointmentId}
+	</select>
+	
+	<select id="finshSave"  resultType="String">
+		SELECT 
+			is_finish 
+		FROM
+			experiment_record ec,
+			experiment_appointment ea 
+		WHERE ec.experiment_appointment_id = ea.id 
+		AND ea.experiment_arrange_id = 
+			(
+			SELECT 
+				experiment_arrange_id 
+			FROM
+				experiment_appointment 
+			WHERE id = 
+			    (
+			    SELECT 
+			    	experiment_appointment_id 
+			    FROM
+			      experiment_record 
+			    WHERE id = #{id}))
+	</select>
+	
+	<select id="getExperimetRecordById"  resultMap="experimentRecord">
+		SELECT 
+			id,
+			student_id,
+			experiment_info_id,
+			experiment_name,
+			teacher_name,
+			experiment_appointment_id,
+			teacher_id,
+			experiment_problem,
+			experiment_completion,
+			experiment_score,
+			experiment_comment,
+			experiment_starttime,
+			experiment_endtime,
+			create_by,
+			create_date,
+			update_by,
+			update_date 
+		FROM
+			experiment_record
+        WHERE id = #{id}
+	</select>
+	
+	<select id="getExperimentAppointmentByRecordId"  resultMap="appointmentResult">
+		SELECT 
+			 id,
+			 student_id as studentId,
+			 experiment_info_id as experimentInfoId,
+			 experiment_arrange_id AS experimentArrangeId,
+			 approve_status AS approveStatus,
+			 is_join AS isJoin,
+			 is_finish AS isFinish,
+			 create_by AS createBy,
+			 create_date AS  createDate,
+			 update_by AS updateBy,
+			 update_date AS updateDate,
+			 experiment_starttime AS experimentStarttime,
+			 experiment_endtime AS  experimentEndtime,
+			 fusufe_reason AS fusufeReason
+		FROM
+			  experiment_appointment 
+		WHERE id = 
+			  (
+			  SELECT 
+			  	experiment_appointment_id 
+			  FROM
+			  	experiment_record 
+			  WHERE id = #{id}
+			  ) 
+	</select>
+	
+	<select id="getStudentNameById" resultType="String">
+		SELECT 
+		  NAME 
+		FROM
+		  sys_user 
+		WHERE id = #{studentId} 
+	</select>
+</mapper>

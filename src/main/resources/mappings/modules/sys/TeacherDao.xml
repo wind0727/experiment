@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.sys.dao.TeacherDao">
+
+	<resultMap id="teacherVOResult" type="com.thinkgem.jeesite.modules.experiment.vo.TeacherVO">
+		<result property="teacherId" column="teacherId" />
+		<result property="teacherName" column="teacherName" />
+	</resultMap>
+	
+    
+	<sql id="teacherColumns">
+		a.id AS "id",
+		a.user_id AS "user.id",
+		a.skill AS "skill",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		u2.name AS "user.name"
+	</sql>
+	
+	<sql id="teacherJoins">
+		LEFT JOIN sys_user u2 ON u2.id = a.user_id
+	</sql>
+    
+	<select id="get" resultType="Teacher">
+		SELECT 
+			<include refid="teacherColumns"/>
+		FROM teacher a
+		<include refid="teacherJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Teacher">
+		SELECT 
+			<include refid="teacherColumns"/>
+		FROM teacher a
+		<include refid="teacherJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="user != null and user.id != null and user.id != ''">
+				AND a.user_id = #{user.id}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Teacher">
+		SELECT 
+			<include refid="teacherColumns"/>
+		FROM teacher a
+		<include refid="teacherJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO teacher(
+			id,
+			user_id,
+			skill,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{user.id},
+			#{skill},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE teacher SET 	
+			user_id = #{user.id},
+			skill = #{skill},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE teacher SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	<select id="findByUser" resultType="Teacher">
+		SELECT id,user_id
+		FROM teacher a
+		WHERE a.user_id = #{userId}
+	</select>
+	
+	<select id="getTeacherVOByOffice" resultMap="teacherVOResult">
+			SELECT 
+			  u.id AS teacherId,
+			  u.name 
+			
+			 AS teacherName 
+			FROM
+			  teacher a,
+			  sys_user u,
+			  sys_office so 
+			WHERE a.user_id = u.id AND u.office_id = so.id
+			  AND so.`parent_id` = #{office_id}
+			  AND u.user_type = 3 
+			  AND u.del_flag="0"
+	</select>
+	
+	
+	
+</mapper>

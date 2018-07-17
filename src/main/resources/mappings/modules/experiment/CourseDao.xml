@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.CourseDao">
+    <resultMap id="teacherVO" type="com.thinkgem.jeesite.modules.experiment.vo.TeacherVO">
+		
+	</resultMap>
+	<sql id="courseColumns">
+		a.id AS "id",
+		a.course_name AS "courseName",
+		a.parent_id AS "parent.id",
+		a.introduce AS "introduce",
+		a.teacher_id AS "teacherId",
+		a.teacher_name AS "teacherName",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="courseJoins">
+	</sql>
+    
+	<select id="get" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM course a
+		<include refid="courseJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM course a
+		<include refid="courseJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="courseName != null and courseName != ''">
+				AND a.course_name = #{courseName}
+			</if>
+			<if test="teacherId != null and teacherId != ''">
+				AND a.teacher_id = #{teacherId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM course a
+		<include refid="courseJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO course(
+			id,
+			course_name,
+			parent_id,
+			introduce,
+			teacher_id,
+			teacher_name,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag,
+			code
+		) VALUES (
+			#{id},
+			#{courseName},
+			#{parent.id},
+			#{introduce},
+			#{teacherId},
+			#{teacherName},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag},
+			#{code}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE course SET 	
+			course_name = #{courseName},
+			parent_id = #{parent.id},
+			introduce = #{introduce},
+			teacher_id = #{teacherId},
+			teacher_name = #{teacherName},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			code = #{code},					
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE course SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	<select id="listTeacherName" resultMap="teacherVO">
+		SELECT 
+			 sy.name AS teacherName,
+			 sy.id AS teacherId
+		FROM
+			 sys_user sy 
+		WHERE user_type =#{USER_TYPE}
+	</select>
+	
+	<select id="listCourseTreeData" resultType="Course">
+		SELECT 
+			id,
+			course_name,
+			parent_id,
+			introduce,
+			teacher_name,
+			parent_id AS teacherId
+		FROM
+			course 
+		WHERE del_flag=#{DEL_FLAG} 
+	</select>
+	
+	<select id="getTeacherNameById" resultType="String">
+		SELECT 
+			su.name 
+		FROM
+			sys_user su 
+		WHERE id = #{teacherId}  
+	</select>
+
+	<select id="getCourseParentNameByid" resultType="String">
+		SELECT 
+			course_name 
+		FROM
+			course 
+		WHERE id = 
+			(SELECT 
+			parent_id 
+		FROM
+			course 
+		WHERE id =#{id})  
+	</select>
+		
+	<select id="listSonCoursesByCourseId" resultType="Course">
+		SELECT 
+			id 
+		FROM
+			course 
+		WHERE parent_id =#{id}   
+	</select>
+		
+	<update id="deleteAboutSon">
+		UPDATE course SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id IN(${idList})
+	</update>
+	
+	<select id="listCourseName" resultType="Course">
+		SELECT 
+			c.course_name AS courseName,
+			c.id AS id
+		FROM
+			course c   
+	</select>
+		
+	<select id="listExperimentName" resultType="ExperimentInfo">
+		SELECT 
+			id,
+			experiment_name,
+			experiment_objective 
+		FROM
+			experiment_info  
+	</select>
+	
+	<select id="countExperiment" resultType="Integer">
+		SELECT 
+			COUNT(*)
+		FROM
+			experiment_info  
+	</select>
+	
+	<select id="listCourseAndExperiment" resultType="Course">
+		SELECT 
+		  id,
+		  course_name,
+		  parent_id,
+		  introduce,
+		  teacher_id,
+		  teacher_name,
+		  create_by,
+		  create_date,
+		  update_by,
+		  update_date,
+		  remarks,
+		  del_flag
+		FROM
+		  course 
+		WHERE id NOT IN 
+		  (SELECT 
+		    course_id 
+		  FROM
+		    choice_course 
+		  WHERE grade_student_id =#{officeId})   
+	</select>
+	
+	<select id="listExperimentByCourse" resultType="String">
+		SELECT 
+		  experiment_info_id 
+		FROM
+		  experiment_course 
+		WHERE couse_id = #{courseId}   
+	</select>
+	
+	<select id="listAllCourse" resultType="Course">
+		SELECT 
+		  c.course_name AS courseName,
+		  c.id AS id,
+		  parent_id AS teacherId,
+		  introduce,
+		  teacher_name,
+		  remarks,
+		  code 
+		FROM
+		  course c 
+		WHERE del_flag = '0' 
+		ORDER BY code 
+	</select>
+	
+	<select id="listAlreadyCourseByOfficeId" resultType="Course">
+		SELECT 
+		  id,
+		  course_name,
+		  parent_id AS teacherId
+		FROM
+		  course 
+		WHERE id  IN 
+		  (SELECT 
+		    course_id 
+		  FROM
+		    choice_course 
+		  WHERE grade_student_id = #{officeId} AND del_flag="0")
+		  AND del_flag="0"  
+	</select>
+	
+	<select id="getParentCourseById" resultType="String">
+		SELECT 
+		  CODE 
+		FROM
+		  course 
+		WHERE id = #{id}
+	</select>
+	
+	<update id="updateExperimentAndCourseById">
+		UPDATE 
+			experiment_course 
+		SET
+		    couse_id = #{courseId},
+		    experiment_info_id = #{experimentId} 
+	</update>
+	
+	<insert id="insertExperimentAndCourseById">
+		INSERT INTO experiment_course(
+			couse_id,
+			experiment_info_id
+		) VALUES (
+			#{courseId},
+			#{experimentId}
+		)
+	</insert>
+	
+	<delete id="cleanCourseExperimentByCourseId">
+		DELETE 
+		FROM
+			experiment_course 
+		WHERE couse_id =#{courseId} 
+    </delete>
+    
+    <delete id="deleteCourseExperimentByExperimentId">
+		DELETE 
+		FROM
+			experiment_course 
+		WHERE experiment_info_id IN (${experimentList}) 
+    </delete>
+    
+    <select id="listExperimentByCourseId" resultType="String">
+		SELECT 
+		  experiment_name 
+		FROM
+		  experiment_info 
+		WHERE id IN 
+		  (SELECT 
+		    experiment_info_id 
+		  FROM
+		    experiment_course 
+		  WHERE couse_id = #{id})
+	</select>
+    
+</mapper>

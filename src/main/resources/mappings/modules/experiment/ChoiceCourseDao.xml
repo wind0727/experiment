@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.ChoiceCourseDao">
+    
+	<sql id="choiceCourseColumns">
+		a.id AS "id",
+		a.course_id AS "courseId",
+		a.course_name AS courseName,
+		a.grade_student_id AS "gradeStudentId",
+		a.choice_type AS "choiceType",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="choiceCourseJoins">
+	</sql>
+    
+	<select id="get" resultType="ChoiceCourse">
+		SELECT 
+			<include refid="choiceCourseColumns"/>
+		FROM choice_course a
+		<include refid="choiceCourseJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ChoiceCourse">
+		SELECT 
+			<include refid="choiceCourseColumns"/>
+		FROM choice_course a
+		<include refid="choiceCourseJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ChoiceCourse">
+		SELECT 
+			<include refid="choiceCourseColumns"/>
+		FROM choice_course a
+		<include refid="choiceCourseJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO choice_course(
+			id,
+			course_id,
+			course_name,
+			grade_student_id,
+			choice_type,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{courseId},
+			#{courseName},
+			#{gradeStudentId},
+			#{choiceType},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE choice_course SET 	
+			course_id = #{courseId},
+			course_name= #{courseName},
+			grade_student_id = #{gradeStudentId},
+			choice_type = #{choiceType},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE choice_course SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	<select id="listAdminExperimentName" resultType="Course">
+		
+	</select>
+	
+	<select id="listAdminCourseByUser" resultType="ChoiceCourse">
+		SELECT 
+			<include refid="choiceCourseColumns"/>
+		FROM
+			choice_course a
+		WHERE grade_student_id =#{officeId} 
+		AND del_flag = "0" 
+	</select>
+	
+	<select id="getAdminCourseNameById" resultType="String">
+		SELECT 
+			course_name 
+		FROM
+			course 
+		WHERE id = #{id} 
+	</select>
+	
+	<select id="listAllOffice" resultType="Office">
+		SELECT 
+		  id,
+		  parent_id AS parentIds,
+		  TYPE AS TYPE,
+		  NAME AS NAME 
+		FROM
+		  sys_office 
+		WHERE del_flag = '0' 
+		  AND TYPE != '8'  
+		  AND TYPE != '2' 
+		  AND TYPE != '4' 
+		ORDER BY CODE  
+	</select>
+	
+	<select id="getCourseByOffice" resultType="Course">
+		SELECT 
+		  id,
+		  course_name AS courseName
+		FROM
+		  course 
+		WHERE id IN 
+		  (SELECT 
+		    course_id 
+		  FROM
+		    choice_course 
+		  WHERE grade_student_id = #{officeId})
+	</select>
+	
+	<!-- 删除之前年级关联的科目 -->
+	<update id="deleteChoiceCourseByGrod">
+		UPDATE choice_course SET 	
+			del_flag="1"
+		WHERE grade_student_id = #{officeId}
+	</update>
+	
+	<insert id="insertGordCourse">
+		INSERT INTO choice_course(
+			id,
+			course_id,
+			course_name,
+			grade_student_id,
+			choice_type,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{courseId},
+			#{courseName},
+			#{gradeStudentId},
+			#{choiceType},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<select id="listCourseByOfficeId" resultType="Course">
+		SELECT 
+		   id,
+		   course_name AS courseName
+		FROM
+		  course 
+		WHERE id IN 
+		  (SELECT 
+		    course_id 
+		  FROM
+		    choice_course 
+		  WHERE grade_student_id = #{officeId}
+		    AND del_flag = '0') 
+		  AND del_flag = '0' 
+	</select>
+	
+	<select id="getTypeByOfficeId" resultType="String">
+		SELECT 
+		  TYPE 
+		FROM
+		  sys_office 
+		WHERE id = #{officeId}  
+	</select>
+	
+	<select id="listOfficeById" resultType="Office">
+		SELECT 
+			id,
+		    parent_id AS parentIds,
+		    TYPE AS TYPE,
+		    NAME AS NAME 
+		FROM
+		    sys_office 
+		WHERE id = #{officeId} 
+	</select>
+	
+	<select id="listStudentCourseByOfficeIdAndUserId" resultType="Course">
+		SELECT 
+		  cc.course_id AS id,
+		  cc.course_name,
+		  c.introduce,
+		  c.teacher_name AS teacherName 
+		FROM
+		  choice_course cc,
+		  course c 
+		WHERE c.id = cc.course_id 
+		  AND (
+		    cc.grade_student_id =  #{officeId}  
+		    OR cc.grade_student_id = #{userId}
+		  ) 
+		  AND cc.del_flag = "0"   
+	</select>
+</mapper>

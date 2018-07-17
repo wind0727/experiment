@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.UserDataAnalysisDao">
+
+	<select id="getUserCount" resultType="int">
+		SELECT 
+		  COUNT(*) 
+		FROM
+		  sys_user 
+	</select>
+	
+	<select id="getBoyCount" resultType="int">
+		SELECT 
+		  COUNT(*) 
+		FROM
+		  sys_user 
+		WHERE sex = "1" 
+	</select>
+	
+	<select id="getAgeSpread" resultType="String">
+		SELECT COUNT(*) AS count FROM 
+		  ( SELECT  DATE_FORMAT(
+		    FROM_DAYS(TO_DAYS(NOW()) - TO_DAYS(birthday)),
+		    '%Y'
+		  ) + 0 AS age 
+		FROM
+		  sys_user ) AS us WHERE us.age<![CDATA[ > ]]>#{startNum}
+		  AND us.age<![CDATA[ <= ]]>#{endNum}
+  
+	</select>
+	
+	<select id="getUserCountByGrade" resultType="String">
+			SELECT 
+			  COUNT(*) 
+			FROM
+			  sys_user u 
+			WHERE u.office_id IN 
+			  (SELECT 
+			    id 
+			  FROM
+			    sys_office 
+			  WHERE parent_id = #{gradeId}) AND user_type='2'
+	</select>
+</mapper>

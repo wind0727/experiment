@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.ExperimentInfoDao">
+
+	<resultMap id="experimentVOResult" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentVO">
+		<result property="experimentInfoId" column="experimentInfoId" />
+		<result property="experimentName" column="experimentName" />
+		<result property="experimentContent" column="experimentContent" />
+		<result property="laboratoryAddress" column="laboratoryAddress" />
+		<result property="experimentStarttime" column="experimentStarttime" />
+		<result property="getExperimentInfosByTeacher" column="getExperimentInfosByTeacher" />
+		<result property="getExperimentInfosByAdmin" column="getExperimentInfosByAdmin" />
+		<result property="getParents" column="getParents" />
+		<result property="teacherName" column="teacherName" />
+	</resultMap>
+	
+	<resultMap id="experimentInfo" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentInfo">
+	</resultMap>
+	
+	<resultMap id="experimentAppointment" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentAppointment">
+	</resultMap>
+    
+	<sql id="experimentInfoColumns">
+		a.id AS "id",
+		a.office_id AS "office.id",
+		a.experiment_name AS "experimentName",
+		a.experiment_objective AS "experimentObjective",
+		a.experiment_content AS "experimentContent",
+		a.experiment_require AS "experimentRequire",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		o2.name AS "office.name"
+	</sql>
+	
+	<sql id="experimentInfoJoins">
+		LEFT JOIN sys_office o2 ON o2.id = a.office_id
+	</sql>
+    
+	<select id="get" resultType="ExperimentInfo">
+		SELECT 
+			<include refid="experimentInfoColumns"/>
+		FROM experiment_info a
+		<include refid="experimentInfoJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ExperimentInfo">
+		SELECT 
+			<include refid="experimentInfoColumns"/>
+		FROM experiment_info a
+		<include refid="experimentInfoJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="office != null and office.id != null and office.id != ''">
+				AND a.office_id LIKE 
+					<if test="dbName == 'oracle'">'%'||#{office.id}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{office.id}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{office.id},'%')</if>
+			</if>
+			<if test="experimentName != null and experimentName != ''">
+				AND a.experiment_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{experimentName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{experimentName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{experimentName},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findPageByOffice" resultMap="experimentInfo">
+		SELECT 
+			<include refid="experimentInfoColumns"/>
+		FROM experiment_info a
+		<include refid="experimentInfoJoins"/>
+		<where>
+			a.del_flag = #{delFlag}
+		</where>
+		AND office_id=#{office.id} 
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ExperimentInfo">
+		SELECT 
+			<include refid="experimentInfoColumns"/>
+		FROM experiment_info a
+		<include refid="experimentInfoJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO experiment_info(
+			id,
+			office_id,
+			experiment_name,
+			experiment_objective,
+			experiment_content,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{office.id},
+			#{experimentName},
+			#{experimentObjective},
+			#{experimentContent},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE experiment_info SET 	
+			office_id = #{office.id},
+			experiment_name = #{experimentName},
+			experiment_objective = #{experimentObjective},
+			experiment_content = #{experimentContent},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE experiment_info SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 查询专业对应的实验信息 -->
+	<select id="getExperimentInfoByOffice" resultType="ExperimentInfo">
+		SELECT
+			ei.id,
+			ei.experiment_name
+		FROM 
+			experiment_info ei
+		WHERE ei.office_Id = #{officeIds}
+	</select>
+	
+	<!-- 查询管理员对应的实验信息 -->
+	<select id="getExperimentInfosByAdmin" resultMap="experimentVOResult">
+		SELECT 
+		  experiment_name experimentName,
+		  id AS experiment_info_id  
+		FROM
+		  experiment_info 
+		WHERE id IN 
+		  (SELECT 
+		    ea.experiment_info_id 
+		  FROM
+		    experiment_arrange ea,
+		    choice_course cc 
+		  WHERE cc.grade_student_id = #{officeId} 
+		    AND ea.course_id = cc.course_id 
+		    AND cc.del_flag = '0')
+	</select>
+	
+	<!-- 查询学生对应的实验信息 -->
+	<select id="getExperimentInfosByStudent"  resultMap="experimentVOResult">
+		SELECT 
+			ei.id AS experimentInfoId,
+			ei.experiment_name 
+		FROM
+			experiment_info ei 
+		WHERE ei.office_id = 
+			(SELECT 
+				id 
+			FROM
+			    sys_office sy 
+			WHERE id IN (
+			    #{officeIds}) 
+			AND sy.type = 7)
+	 </select>
+	 
+    <!-- 查询老师对应的实验信息 -->
+	<select id="getExperimentInfosByTeacher" resultMap="experimentVOResult">
+		SELECT 
+			ei.id AS experimentInfoId,
+			ei.experiment_name 
+		FROM
+			experiment_info ei 
+		WHERE ei.office_id in
+			(SELECT 
+			   	sy.id
+		FROM
+			    sys_office sy 
+		WHERE parent_id in 
+			  (SELECT 
+			  so.parent_id
+	    FROM
+			  sys_office so 
+	    WHERE id = #{officeIds}) 
+	    AND sy.type = "7"
+	    )
+	</select>
+	
+	<!-- 查询年级对应的实验和实验安排信息 -->
+	<select id="getExperimentVOByOffice" resultMap="experimentVOResult">
+		SELECT
+			ei.id AS experimentInfoId,ea.id AS experimentArrangeId,
+			ei.experiment_name,experiment_content,
+			laboratory_address,experiment_starttime,ea.teacher_name As teacherName
+		FROM 
+			experiment_info ei,experiment_arrange ea
+		WHERE 
+			ei.id = ea.experiment_info_id AND ei.office_id = #{officeId}
+	</select>
+	
+	<select id="getExperimentVOByGrad" resultMap="experimentAppointment">
+		SELECT 
+		  ea.id AS experimentArrangeId,
+		  ea.experiment_name,
+		  ea.laboratory_name,
+		  ea.laboratory_address AS laboratoryAddress,
+		  ei.experiment_content,
+		  ea.experiment_starttime,
+		  ea.experiment_endtime,
+		  ea.experiment_info_id AS experimentInfoId 
+		FROM
+		  experiment_arrange ea,
+		  experiment_info ei
+		WHERE experiment_info_id IN 
+		  (SELECT 
+		    id 
+		  FROM
+		    experiment_info 
+		  WHERE id IN 
+		    (SELECT 
+		  experiment_info_id 
+		FROM
+		  v_experiment 
+		WHERE grade_student_id = #{officeId} 
+		  OR grade_student_id = #{studentId} ) 
+		  AND ea.id NOT IN 
+		  (SELECT 
+		    experiment_arrange_id 
+		  FROM
+		    experiment_appointment 
+		  WHERE student_id = #{studentId})
+		  AND ea.experiment_info_id=ei.id
+		  AND ea.experiment_appointment_count &lt; ea.count)
+		  <if test="experimentInfoId != null and experimentInfoId != ''">
+		  	  AND ea.experiment_info_id = #{experimentInfoId}
+		  </if>
+		  <if test="experimentStarttime != null and experimentEndtime != null and experimentStarttime != '' and experimentEndtime != ''">
+	      	  AND ea.experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		  </if>
+		  <if test="experimentStarttime != null and experimentEndtime == null">
+			  AND ea.experiment_starttime &gt; #{beginCreateDate}
+		  </if> 
+		 <if test="experimentStarttime == null and experimentEndtime != null">
+			  AND ea.experiment_starttime &lt; #{endCreateDate}
+		  </if>
+	 	  <choose> 
+	 		  <when test="page !=null and page.orderBy != null and page.orderBy != ''"> 
+	 			  ORDER BY ${page.orderBy} 
+	 		  </when> 
+	 		  <otherwise> 
+	 		  	  ORDER BY ea.update_date DESC 
+	 	      </otherwise> 
+	 	  </choose> 
+	</select>
+	
+	<!-- <select id="getExperimentCountByOffice" resultType="Integer">
+		SELECT 
+			count(*) AS count
+		FROM 
+		experiment_info
+		WHERE 
+		office_Id 
+		IN 
+		(
+			SELECT 
+				id 
+			FROM 
+				sys_office 
+			WHERE 
+				parent_id = #{officeId}
+		)
+	</select> -->
+	
+	<select id="getExperimentCountByOffice" resultType="Integer">
+		SELECT 
+		  COUNT(*) 
+		FROM
+		  choice_course cc,
+		  experiment_course ec,
+		  experiment_info ei 
+		WHERE ei.del_flag = '0' 
+		  AND cc.del_flag = '0' 
+		  AND cc.course_id = ec.couse_id 
+		  AND ei.id = ec.experiment_info_id 
+		  AND grade_student_id IN 
+		  (SELECT 
+		    id 
+		  FROM
+		    sys_office 
+		  WHERE parent_id = #{officeId})
+	</select>
+	
+	
+	
+	<!-- <select id="getExperimentCountByGrade" resultType="Integer">
+		SELECT 
+			count(*) 
+		AS 
+			count
+		FROM 
+			experiment_info
+		WHERE 
+			office_Id = #{officeId}
+	</select> -->
+	
+	<select id="getExperimentCountByGrade" resultType="Integer">
+		SELECT 
+		  COUNT(*) AS count 
+		FROM 
+		  choice_course cc, 
+		  experiment_course ec, 
+		  experiment_info ei 
+		WHERE ei.del_flag = '0' 
+		  AND cc.del_flag = '0' 
+		  AND cc.course_id = ec.couse_id 
+		  AND ei.id = ec.experiment_info_id 
+		  AND grade_student_id = #{officeId} 
+	</select> 
+	
+	<select id="getExperimentName" resultMap="experimentVOResult">
+		SELECT 
+		  id,
+		  experiment_name AS experimentName
+		FROM
+		  experiment_info 
+		WHERE id IN 
+		  (SELECT 
+		    ea.experiment_info_id 
+		  FROM
+		    experiment_arrange ea,
+		    experiment_course ec,
+		    choice_course cc 
+		  WHERE cc.del_flag = '0' 
+		    AND (
+		      cc.grade_student_id = #{officeId} 
+		      OR cc.grade_student_id = #{userId}
+		    ) 
+		    AND ec.couse_id = cc.course_id 
+		    AND ea.experiment_info_id = ec.experiment_info_id 
+		    AND ea.id NOT IN 
+		    (SELECT 
+		      experiment_arrange_id 
+		    FROM
+		      experiment_appointment 
+		    WHERE student_id = #{userId}))
+	</select>
+	
+</mapper>

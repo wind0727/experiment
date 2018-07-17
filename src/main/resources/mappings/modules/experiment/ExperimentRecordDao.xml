@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.ExperimentRecordDao">
+    
+    <resultMap id="experimentInfo" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentInfo">
+	</resultMap>
+	
+	<resultMap id="appointmentResult" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentAppointmentVO">
+		<result property="experimentInfoId" column="experimentInfoId" />
+		<result property="experimentAppointmentId" column="experimentAppointmentId" />
+		<result property="experimentName" column="experimentName" />
+		<result property="teacherId" column="teacherId" />
+	</resultMap>
+	
+	<resultMap id="experimentArrange" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentArrange">
+	</resultMap>
+	
+	<resultMap id="experimentRecord" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentRecord">
+	</resultMap>
+	
+    <resultMap id="experimentFinishVOResult" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentFinishVO">
+		<result property="experimentInfoId" column="experimentInfoId" />
+		<result property="finishCount" column="finishCount" />
+		<result property="avgScore" column="avgScore" />
+	</resultMap>
+
+	<sql id="experimentRecordColumns">
+		a.id AS "id",
+		a.student_id AS "studentId",
+		a.experiment_result_url AS "experimentResultUrl",
+		a.experiment_info_id AS "experimentInfoId",
+		a.experiment_appointment_id AS "experimentAppointmentId",
+		a.teacher_name AS teacherName,
+		a.experiment_name AS experimentName,
+		a.teacher_id AS "teacherId",
+		a.experiment_problem AS "experimentProblem",
+		a.experiment_completion AS "experimentCompletion",
+		a.experiment_score AS "experimentScore",
+		a.experiment_comment AS "experimentComment",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate"
+	</sql>
+	
+	<sql id="experimentRecordJoins">
+	</sql>
+    
+	<select id="get" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+			<include refid="experimentRecordJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getTeacherNameById" resultType="String">
+		SELECT 
+			u.name 
+		FROM
+			sys_user u 
+		WHERE id =#{teacherId} 
+	</select>
+	
+	<select id="getHistoryExperiemntName" resultType="experimentInfo">
+	SELECT 
+		experiment_name,
+		id 
+	FROM
+		experiment_info 
+	WHERE id 
+		IN(
+			SELECT 
+				ei.id 
+			FROM
+			    experiment_info ei,
+			    experiment_record_his erh 
+			WHERE erh.experiment_info_id = ei.id 
+			AND erh.student_id =#{officeId}
+			)
+	</select>
+	
+	<select id="getExperimentInfoIdNameById" resultMap="experimentRecord">
+		SELECT 
+			ear.experiment_info_id AS experimentInfoId,
+			ear.experiment_name AS experimentName,
+			ear.teacher_name AS teacherName,
+			ear.teacher_id AS teacherId,
+			eap.experiment_starttime AS experimentStarttime,
+			eap.experiment_endtime AS experimentEndtime
+		FROM
+			experiment_appointment eap,
+			experiment_arrange ear 
+		WHERE eap.id = #{experimentInfoId}
+		AND ear.id = eap.experiment_arrange_id 
+	</select>
+	
+	<select id="getStuedntHistoryExperiemntList" resultType="ExperimentRecord">
+		SELECT 
+			erh.id,
+			erh.create_by,
+			erh.create_date,
+			erh.experiment_comment,
+			erh.experiment_completion,
+			erh.experiment_name,
+			erh.experiment_problem,
+			erh.experiment_score,
+			erh.teacher_name,
+			erh.update_by,
+			erh.update_date
+		FROM
+			experiment_record_his erh
+		WHERE erh.student_id =#{officeId}
+		<if test="experimentInfoId != null and experimentInfoId != ''">
+			AND erh.experiment_info_id = #{experimentInfoId}
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime != null and experimentStarttime != '' and experimentEndtime != ''">
+			AND erh.experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		</if> 
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY erh.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getMinuteStuedntHistoryExperiemntList" resultType="ExperimentRecord">
+		SELECT 
+			erh.create_by,
+			erh.create_date,
+			erh.experiment_comment,
+			erh.experiment_completion,
+			erh.experiment_name,
+			erh.experiment_problem,
+			erh.experiment_score,
+			erh.teacher_name,
+			erh.update_by,
+			erh.update_date 
+		FROM
+			experiment_record_his erh 
+		WHERE id = #{id}
+	</select>
+	
+	<select id="getStuedntHistoryArrangeId" resultType="String">
+		SELECT 
+			ea.experiment_arrange_id 
+		FROM
+			experiment_record_his erh,
+			experiment_appointment ea 
+		WHERE erh.experiment_appointment_id = ea.id 
+		AND erh.student_id =#{officeId}
+	</select>
+	
+	<select id="getStuedntExperimentCount" resultType="String">
+		SELECT 
+			COUNT(*)
+		FROM
+			experiment_record_his erh,
+			experiment_appointment_his eah 
+		WHERE erh.experiment_info_id = eah.experiment_info_id 
+		AND eah.experiment_arrange_id !=#{experimmentArrangeId} 
+		AND erh.student_id =#{officeId}
+	</select>
+	
+	<select id="findList" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+			<include refid="experimentRecordJoins"/>
+		<where>
+			<if test="experimentInfoId != null and experimentInfoId != ''">
+				AND a.experiment_info_id = #{experimentInfoId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ExperimentRecord">
+		SELECT 
+			<include refid="experimentRecordColumns"/>
+		FROM experiment_record a
+			<include refid="experimentRecordJoins"/>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO experiment_record(
+			id,
+			student_id,
+			experiment_result_url,
+			experiment_info_id,
+			experiment_name,
+			teacher_name,
+			experiment_appointment_id,
+			teacher_id,
+			experiment_problem,
+			experiment_completion,
+			experiment_score,
+			experiment_comment,
+			experiment_starttime,
+			experiment_endtime,
+			create_by,
+			create_date,
+			update_by,
+			update_date
+		) VALUES (
+			#{id},
+			#{studentId},
+			#{experimentResultUrl},
+			#{experimentInfoId},
+			#{experimentName},
+			#{teacherName},
+			#{experimentAppointmentId},
+			#{teacherId},
+			#{experimentProblem},
+			#{experimentCompletion},
+			#{experimentScore},
+			#{experimentComment},
+			#{experimentStarttime},
+			#{experimentEndtime},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE experiment_record SET 	
+			experiment_info_id = #{experimentInfoId},
+			teacher_id = #{teacherId},
+			experiment_result_url=#{experimentResultUrl},
+			experiment_problem = #{experimentProblem},
+			experiment_completion = #{experimentCompletion},
+			experiment_score = #{experimentScore},
+			experiment_comment = #{experimentComment},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate}
+		WHERE id = #{id}
+	</update>
+	
+	<delete  id="delete">
+		DELETE FROM experiment_record
+		WHERE id = #{id}
+	</delete >
+	
+	<select id="getExperimentFinishsByGrade" resultMap="experimentFinishVOResult">
+		SELECT    
+			experiment_info_id,COUNT(*) AS finishCount, 
+		IFNULL(CONVERT( 
+		    SUM(experiment_score) / COUNT(*), 
+		    DECIMAL (10, 1) 
+		  ),1) AS avgScore 
+		FROM 
+		  experiment_record_his 
+		WHERE student_id IN 
+		  (SELECT 
+		    u.id 
+		  FROM 
+		    sys_office s, 
+		    sys_user u  
+		WHERE s.id = u.office_id 
+		AND s.parent_id = #{gradeId} 
+		AND u.user_type = #{userType}) 
+		GROUP BY experiment_info_id 
+	</select>
+	
+	<select id="getExperimentFinishsByClass" resultMap="experimentFinishVOResult">
+		SELECT   
+			experiment_info_id,COUNT(*) AS finishCount,
+		IFNULL(CONVERT(
+		    SUM(experiment_score) / COUNT(*),
+		    DECIMAL (10, 1)
+		  ),1) AS avgScore 
+		FROM
+		  experiment_record_his 
+		WHERE student_id IN 
+		  (
+		  SELECT 
+		  	u.id
+		  FROM
+		    sys_office s,
+		    sys_user u 
+		WHERE s.id = u.office_id 
+		AND s.id = #{classId} 
+		AND u.user_type = #{userType})
+		GROUP BY experiment_info_id
+	</select>
+	
+	<select id="getExperimentAvgScoreByGrade" resultType="Double">
+		SELECT 
+		  IFNULL(CONVERT(
+		    SUM(experiment_score) / COUNT(*),
+		    DECIMAL (10, 1)
+		  ),1) AS avgScore 
+		FROM
+		  experiment_record_his 
+		WHERE student_id IN 
+		  (SELECT 
+		    u.id 
+		  FROM
+		    sys_office s,
+		    sys_user u 
+		  WHERE s.id = u.office_id 
+		    AND s.parent_id = #{gradeId} 
+		    AND u.user_type = #{userType}) 
+	</select>
+	
+	<select id="getExperimentRecord" resultType="ExperimentRecord">
+		SELECT 
+		    id,
+			experiment_name,
+			teacher_name,
+			student_id,
+			experiment_completion,
+			experiment_result_url,
+			experiment_score,
+			experiment_comment,
+			experiment_problem,
+			experiment_appointment_id
+		FROM
+			experiment_record 
+		WHERE id =#{id}  
+	</select>
+	
+	<select id="getStudentName" resultType="String">
+			SELECT 
+			  NAME 
+			FROM
+			  sys_user 
+			WHERE id =#{studentId}  
+	</select>
+	
+	<select id="getStudentExperimentRecordByStudent" resultType="ExperimentRecord">
+		SELECT 
+			experiment_name AS experimentName ,
+			id
+		FROM
+			experiment_info 
+		WHERE id IN 
+			(
+			SELECT 
+				experiment_info_id 
+			FROM
+				experiment_record 
+		WHERE student_id=#{studentId})  
+	</select>
+	
+	<select id="getExperimentNameByStudent" resultMap="experimentInfo">
+		SELECT 
+			experiment_name AS experimentName,
+			id 
+		FROM
+			experiment_info 
+		WHERE id IN 
+			(
+			SELECT 
+				ea.experiment_info_id 
+			FROM
+				experiment_appointment ea,
+				experiment_info ei,
+				experiment_arrange ear 
+			WHERE ea.experiment_info_id = ei.id 
+			AND ear.id = ea.`experiment_arrange_id` 
+			AND ea.student_id = #{userId} 
+			AND ea.approve_status = #{status})
+	</select>
+	
+	<select id="getTeacherNameByExperimentAppointment" resultMap="experimentArrange">
+		SELECT 
+			NAME AS teacherName,
+			id AS teacherId
+		FROM
+			sys_user
+		WHERE id IN 
+			(
+			SELECT 
+				ear.teacher_id 
+			FROM
+				experiment_appointment ea,
+				experiment_info ei,
+				experiment_arrange ear 
+			WHERE ea.experiment_info_id = ei.id 
+			AND ear.id = ea.`experiment_arrange_id` 
+			AND ea.student_id = #{userId}  
+			AND ea.approve_status = #{status}
+			)    
+	</select>
+	
+	<select id="getStudentExperimentRecordByStudentId" resultMap="appointmentResult">
+		SELECT 
+			id,
+			experiment_name AS experimentName,
+			teacher_name AS teacherName,
+			experiment_problem AS experimentProblem,
+			experiment_completion AS experimentCompletion,
+			experiment_result_url AS experimentResultUrl
+		FROM
+			experiment_record 
+		WHERE student_id = #{userId}
+		<if test="experimentInfoId != null and experimentInfoId != ''">
+			AND experiment_info_id = #{experimentInfoId}
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime == null">
+			AND experiment_starttime &gt; #{experimentStarttime}
+		</if>
+		<if test="experimentStarttime == null and experimentEndtime != null">
+			AND experiment_endtime &lt; #{experimentEndtime} 
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime != null">
+			AND experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		</if>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getExperimentResultById" resultMap="experimentRecord">
+		SELECT 
+			experiment_problem AS experimentProblem,
+			experiment_completion AS experimentCompletion,
+			experiment_score AS experimentScore,
+			experiment_comment AS experimentComment,
+			experiment_name AS experimentName,
+			teacher_name AS teacherName
+		FROM
+			experiment_record 
+		WHERE id = #{id}  
+	</select>
+	
+	<select id="getUserTypeById" resultType="String">
+		SELECT 
+			user_type AS userType
+		FROM
+			sys_user 
+		WHERE id = #{id} 
+	</select>
+
+</mapper>

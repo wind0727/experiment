@@ -1,0 +1,45 @@
+body,html{
+    font-family: "Microsoft YaHei", "Microsoft YaHei Light", "SimSun";
+}
+
+.wrapper h1,h2,h3,h4,h5,h6{
+    font-family: "Microsoft YaHei", "Microsoft YaHei Light", "SimSun";
+}
+
+.content .operateTip{
+    text-align: center;
+    color: red;
+    font-size: 12px;
+    display: none;
+}
+.sport-tip,.activity-tip .table-bordered>thead>tr>th, .table-bordered>tbody>tr>th, .table-bordered>tfoot>tr>th, .table-bordered>thead>tr>td, .table-bordered>tbody>tr>td, .table-bordered>tfoot>tr>td {
+    border-color: #ddd;
+}
+
+.datatip-table{
+    width: 100%;
+    display: none;
+}
+.datatip-pic{
+    width: 100%;
+}
+
+.sidebar-menu li>a>.pull-right-container {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    margin-top: -7px;
+    font-size: 1.5rem;
+}
+.sidebar-menu li>a>.fa-angle-left, .sidebar-menu li>a>.pull-right-container>.fa-angle-left {
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin-right: 10px;
+}
+.sidebar-menu li.active>a>.fa-angle-left, .sidebar-menu li.active>a>.pull-right-container>.fa-angle-left {
+    -webkit-transform: rotate(-90deg);
+    -ms-transform: rotate(-90deg);
+    -o-transform: rotate(-90deg);
+    transform: rotate(-90deg);
+}

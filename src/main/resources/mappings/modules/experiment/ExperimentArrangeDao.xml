@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.ExperimentArrangeDao">
+    
+    <resultMap id="experimentArrange" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentArrange">
+	</resultMap>
+	
+	<resultMap id="teacherVO" type="com.thinkgem.jeesite.modules.experiment.vo.TeacherVO">
+	</resultMap>
+    
+	<sql id="experimentArrangeColumns">
+		a.id AS "id",
+		a.experiment_info_id AS "experimentInfoId",
+		a.experiment_name AS "experimentName",
+		a.teacher_name AS "teacherName",
+		a.laboratory_name AS "laboratoryName",
+		a.laboratory_address AS "laboratoryAddress",
+		a.experiment_starttime AS "experimentStarttime",
+		a.experiment_endtime AS "experimentEndtime",
+		a.teacher_id AS "teacherId",
+		a.count AS "count",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate"
+	</sql>
+	
+	<sql id="experimentArrangeJoins">
+	</sql>
+    
+	<select id="get" resultType="ExperimentArrange">
+		SELECT 
+			<include refid="experimentArrangeColumns"/>
+		FROM experiment_arrange a
+		<include refid="experimentArrangeJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getExperimentNameById" resultType="String">
+		SELECT 
+			 experiment_name
+		FROM
+			 experiment_info 
+		WHERE id = #{infoId} 
+	</select>
+	<select id="getTeacherNameById" resultType="String">
+		SELECT 
+			 u.name 
+		FROM
+			 sys_user u 
+		WHERE id =#{teacherId}
+	</select> 
+	<select id="findList" resultType="ExperimentArrange">
+		SELECT 
+			<include refid="experimentArrangeColumns"/>
+		FROM experiment_arrange a,
+        experiment_info ei 
+        WHERE a.experiment_info_id = ei.id 
+		  <if test="experimentInfoId != null and experimentInfoId != ''">
+				AND a.experiment_info_id = #{experimentInfoId}
+			</if>
+			 <if test="beginExperimentStarttime != null and endExperimentStarttime != null and beginExperimentStarttime != '' and endExperimentStarttime != ''">
+				AND a.experiment_starttime BETWEEN #{beginExperimentStarttime} AND #{endExperimentStarttime}
+			</if> 
+		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ExperimentArrange">
+		SELECT 
+			<include refid="experimentArrangeColumns"/>
+		FROM experiment_arrange a
+		<include refid="experimentArrangeJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO experiment_arrange(
+			id,
+			experiment_info_id,
+			laboratory_name,
+			course_id,
+			experiment_name,
+		    teacher_name,
+			laboratory_address,
+			experiment_starttime,
+			experiment_endtime,
+			teacher_id,
+			count,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			experiment_appointment_count
+		) VALUES (
+			#{id},
+			#{experimentInfoId},
+			#{laboratoryName},
+			#{course.id},
+			#{experimentName},
+		    #{teacherName}, 
+			#{laboratoryAddress},
+			#{experimentStarttime},
+			#{experimentEndtime},
+			#{teacherId},
+			#{count},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{experimentAppointmentCount}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE experiment_arrange SET 	
+			experiment_info_id = #{experimentInfoId},
+			experiment_name = #{experimentName},
+			laboratory_name = #{laboratoryName},
+			laboratory_address = #{laboratoryAddress},
+			experiment_starttime = #{experimentStarttime},
+			experiment_endtime = #{experimentEndtime},
+			teacher_id = #{teacherId},
+			count = #{count},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM experiment_arrange
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateExperimentAppointmentCount">
+		UPDATE 
+		  experiment_arrange 
+		SET
+		  experiment_appointment_count=experiment_appointment_count+1 
+		WHERE id =#{experimentArrangeId} 
+	</update>
+	
+	<select id="getPeopleNumByArrangeId" resultType="Integer">
+		SELECT 
+			(
+		    	e.count - e.experiment_appointment_count
+			) 
+		FROM
+			experiment_arrange e 
+		WHERE id =#{experimentArrangeId} 
+	</select>
+	
+	<select id="getExperimentArrangeById" resultType="ExperimentArrange"> 
+		SELECT 
+			id,
+			ex.experiment_info_id AS experimentInfoId,
+			ex.teacher_id AS teacherId,
+			ex.laboratory_name,
+			ex.laboratory_address,
+			ex.teacher_name,
+			ex.experiment_name,
+			ex.count,
+			ex.experiment_starttime,
+            ex.experiment_endtime
+		FROM
+			experiment_arrange ex
+		WHERE id =#{id}
+	</select>
+	
+	<select id="findExperimentArrangePageByOffice" resultMap="experimentArrange">
+		SELECT 
+		  ea.id,
+		  ea.experiment_name,
+		  ea.laboratory_name,
+		  ea.laboratory_address,
+		  ea.experiment_starttime,
+		  ea.experiment_endtime,
+		  ea.teacher_name,
+		  ea.count,
+		  cc.course_name,
+		  cc.course_id 
+		FROM
+		  experiment_arrange ea,
+		  choice_course cc 
+		WHERE cc.grade_student_id = #{officeId}
+		      AND ea.course_id = cc.course_id 
+		      AND cc.del_flag = '0' 
+	    <if test="experimentInfoId != null and experimentInfoId != ''">
+			  AND ea.experiment_info_id = #{experimentInfoId}
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime == null">
+			  AND ea.experiment_starttime &gt; #{experimentStarttime}
+		</if>
+		<if test="experimentStarttime == null and experimentEndtime != null">
+			  AND ea.experiment_endtime &lt; #{experimentEndtime} 
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime != null">
+			 AND ea.experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		</if>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY ea.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<update id="updateExperimentArrange">
+		UPDATE experiment_arrange SET 	
+			laboratory_name = #{laboratoryName},
+			laboratory_address = #{laboratoryAddress},
+			experiment_starttime = #{experimentStarttime},
+			experiment_endtime = #{experimentEndtime},
+			teacher_id = #{teacherId},
+			count = #{count},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate}
+		WHERE id = #{id}
+	</update>
+	
+	<select id="listCourseByOfficeId" resultType="Course">
+		SELECT 
+		  course_id AS id, course_name AS courseName
+		FROM
+		  choice_course 
+		WHERE grade_student_id = #{officeId} 
+		  AND del_flag = '0' 
+	</select>
+	
+	<select id="listExperimentByCourseId" resultType="ExperimentInfo">
+		SELECT 
+		   ei.id,
+		   ei.experiment_name
+		FROM
+		  experiment_course ec,
+		  experiment_info ei 
+		WHERE ec.couse_id = #{id} 
+		  AND ec.experiment_info_id = ei.id 
+	</select>
+	
+	 <select id="getTeacherByCourse" resultMap="teacherVO">
+		SELECT 
+		  teacher_name AS teacherName,
+		  teacher_id AS teacherId
+		FROM
+		  course 
+		WHERE id = #{courseId}
+	</select> 
+</mapper>

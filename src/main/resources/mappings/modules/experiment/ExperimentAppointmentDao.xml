@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.experiment.dao.ExperimentAppointmentDao">
+
+	<resultMap id="studentInfoVOResult" type="com.thinkgem.jeesite.modules.experiment.vo.StudentInfoVO">
+		<result property="experimentAppointmentId" column="experimentAppointmentId" />
+		<result property="studentName" column="studentName" />
+		<result property="officeName" column="officeName" />
+		<result property="experimentName" column="experimentName" />
+		<result property="laboratoryAddress" column="laboratoryAddress" />
+		<result property="experimentStarttime" column="experimentStarttime" />
+		<result property="count" column="count" />
+	</resultMap>
+	
+	<resultMap id="appointmentResult" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentAppointmentVO">
+		<result property="experimentInfoId" column="experimentInfoId" />
+		<result property="experimentAppointmentId" column="experimentAppointmentId" />
+		<result property="experimentName" column="experimentName" />
+		<result property="teacherId" column="teacherId" />
+	</resultMap>
+	
+	<resultMap id="experimentArrange" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentArrange">
+	</resultMap>
+	<resultMap id="studentInfoVO" type="com.thinkgem.jeesite.modules.experiment.vo.StudentInfoVO">
+	</resultMap>
+    
+    <resultMap id="experimentInfo" type="com.thinkgem.jeesite.modules.experiment.entity.ExperimentInfo">
+	</resultMap>
+    <resultMap id="experimentVO" type="com.thinkgem.jeesite.modules.experiment.vo.ExperimentVO">
+	</resultMap>
+	<sql id="experimentAppointmentColumns" >
+		a.id AS "id",
+		a.student_id AS "studentId",
+		a.experiment_info_id AS "experimentInfoId",
+		a.experiment_arrange_id AS "experimentArrangeId",
+		a.approve_status AS "approveStatus",
+		a.is_join AS "isJoin",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate"
+	</sql>
+	
+	<sql id="experimentAppointmentJoins">
+	</sql>
+    
+	<select id="get" resultType="ExperimentAppointment">
+		SELECT 
+			<include refid="experimentAppointmentColumns"/>
+		FROM experiment_appointment a
+			<include refid="experimentAppointmentJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ExperimentAppointment">
+		SELECT 
+			<include refid="experimentAppointmentColumns"/>
+		FROM experiment_appointment a
+		<include refid="experimentAppointmentJoins"/>
+		<where>
+			
+			<if test="experimentInfoId != null and experimentInfoId != ''">
+				AND a.experiment_info_id = #{experimentInfoId}
+			</if>
+			<if test="beginCreateDate != null and endCreateDate != null and beginCreateDate != '' and endCreateDate != ''">
+				AND a.create_date BETWEEN #{beginCreateDate} AND #{endCreateDate}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ExperimentAppointment">
+		SELECT 
+			<include refid="experimentAppointmentColumns"/>
+		FROM experiment_appointment a
+		<include refid="experimentAppointmentJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO experiment_appointment(
+			id,
+			student_id,
+			fusufe_reason,
+			is_finish,
+			is_join,
+			approve_status,
+			experiment_info_id,
+			experiment_arrange_id,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			experiment_starttime,
+			experiment_endtime
+		) VALUES (
+			#{id},
+			#{studentId},
+			#{fusufeReason},
+			#{isFinish},
+			#{isJoin},
+			#{approveStatus},
+			#{experimentInfoId},
+			#{experimentArrangeId},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{experimentStarttime},
+			#{experimentEndtime}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE experiment_appointment SET 	
+			student_id = #{studentId},
+			fusufe_reason=#{fusufeReason},
+			experiment_info_id = #{experimentInfoId},
+			approve_status = #{approveStatus},
+			is_join = #{isJoin},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateApproveStatus">
+		UPDATE experiment_appointment SET 	
+			approve_status = #{approveStatus},
+			fusufe_reason = #{fusufeReason}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM experiment_appointment
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 查询实验预约相关信息 -->
+	<select id="getStuedntInfoVOByCondition" resultMap="studentInfoVOResult">
+		SELECT 
+		  ea.experiment_arrange_id,
+		  ei.experiment_name,
+		  ea.id AS experimentAppointmentId,
+		  ea.experiment_starttime,
+		  ear.laboratory_address,
+		  ear.laboratory_name,
+		  ea.student_id AS studentId ,
+		  su.name AS studentName,
+		  (ear.count-ear.experiment_appointment_count) AS count
+		FROM
+		  experiment_info ei,
+		  experiment_appointment ea,
+		  experiment_arrange ear ,
+		  sys_user su
+		WHERE ei.id IN 
+		  (SELECT 
+		    ec.experiment_info_id 
+		  FROM
+		    course c,
+		    experiment_course ec 
+		  WHERE teacher_id =  #{id}
+		    AND c.id = ec.couse_id) 
+		  AND ei.id = ea.experiment_info_id 
+		  AND ea.approve_status = '1' 
+		  AND ea.experiment_arrange_id = ear.id
+		  AND su.id = ea.student_id  
+		 <if test="experimentInfoId != null and experimentInfoId != ''">
+		   AND ei.id = #{experimentInfoId}
+		 </if>
+		 <if test="experimentStarttime != null and experimentEndtime == null">
+			  AND ea.experiment_starttime &gt; #{experimentStarttime}
+		 </if>
+		 <if test="experimentStarttime == null and experimentEndtime != null">
+			  AND ea.experiment_endtime &lt; #{experimentEndtime} 
+		 </if>
+		 <if test="experimentStarttime != null and experimentEndtime != null">
+			 AND ea.experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		 </if>
+		 <choose>
+		 	<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY ea.update_date DESC
+			</otherwise>
+		 </choose>  
+	</select>
+	
+	<select id="getStuedntInfoName" resultMap="studentInfoVOResult">
+		SELECT 
+		  id AS experimentInfoId,
+		  experiment_name 
+		FROM
+		  experiment_info 
+		WHERE id IN 
+		  (SELECT 
+		    ea.experiment_info_id 
+		  FROM
+		    experiment_appointment ea,
+		    course c,
+		    experiment_course ec 
+		  WHERE teacher_id = #{id} 
+		    AND c.id = ec.couse_id 
+		    AND ea.experiment_info_id = ec.experiment_info_id 
+		    AND ea.approve_status = '1') 
+		    ORDER BY update_date DESC 
+	</select>
+	
+<!--	<select id="getStuedntInfoName" resultMap="studentInfoVO">
+		SELECT
+			ei.id AS experimentInfoId,
+			ei.experiment_name
+		FROM
+			sys_office so,
+			experiment_info ei
+		WHERE so.id = ei.office_id
+		AND so.parent_id = #{officeId}
+		ORDER BY ei.sort DESC
+	</select>
+	-->
+	<!-- 查询学生预约实验信息 -->
+	<select id="getAppointmentByCondition" resultMap="appointmentResult">
+		SELECT 
+			ea.experiment_info_id,
+			ea.id AS experimentAppointmentId,
+			ei.experiment_name,
+			ear.teacher_id AS teacherId,
+			ear.teacher_name As teacherName
+		FROM
+			experiment_appointment ea,
+			experiment_info ei,
+			experiment_arrange ear 
+		WHERE ea.experiment_info_id = ei.id 
+		AND ear.id = ea.experiment_arrange_id
+		AND ea.student_id = #{studentId} 
+		AND ea.approve_status = #{approveStatus} 
+	</select>
+	
+	<select id="findExperimentAndTeacherInfoByCondition" resultMap="appointmentResult">
+		SELECT 
+			eap.experiment_info_id,
+			ear.teacher_id 
+		FROM
+			experiment_appointment eap,
+			experiment_arrange ear 
+		WHERE eap.experiment_arrange_id = ear.id 
+		AND eap.id = #{experimentAppointmentId}
+	</select>
+	<select id="getMyAppointmentByUser" resultMap="experimentArrange">
+		SELECT 
+			ei.experiment_name AS experimentName,
+			ei.experiment_content AS experimentContent,
+			ear.experiment_starttime AS experimentStarttime,
+			ear.laboratory_name AS laboratoryName,
+			eap.id AS id,
+			ear.laboratory_address ASlaboratoryAddress,
+			ear.teacher_name AS teacherName,
+			eap.approve_status approveStatus
+		FROM
+			experiment_info ei,
+			experiment_arrange ear,
+			experiment_appointment eap 
+		WHERE ei.id = ear.experiment_info_id 
+		AND ear.id = eap.experiment_arrange_id 
+		AND student_id =#{userId}
+		<if test="experimentInfoId != null and experimentInfoId != ''">
+			AND ei.id = #{experimentInfoId}
+		</if>
+		<if test="experimentStarttime != null and experimentEndtime != null and experimentStarttime != '' and experimentEndtime != ''">
+			AND ear.experiment_starttime BETWEEN #{experimentStarttime} AND #{experimentEndtime}
+		</if>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY eap.update_date DESC
+			</otherwise>
+		</choose>  	  
+	</select>
+	
+	<select id="getStudentExperimentAppointments" resultMap="experimentVO">
+		SELECT 
+			experiment_starttime AS experimentStarttime, 
+			experiment_endtime AS experimentEndtime 
+		FROM
+			experiment_appointment 
+		WHERE student_id = #{id} 
+	</select>
+	
+	<select id="getMyAppointmentByStudentId" resultMap="experimentInfo">
+		SELECT 	
+			id,
+			experiment_name as experimentName
+		FROM
+			experiment_info 
+		WHERE id IN 
+			(SELECT 
+				experiment_info_id 
+			FROM
+			    experiment_appointment 
+			WHERE student_id = #{userId}) 
+	</select>
+	
+	<select id="listViaExperimentNameByStudent" resultType="String">
+		SELECT 
+			ei.experiment_name 
+		FROM
+			experiment_appointment ea,
+			experiment_info ei 
+		WHERE approve_status = #{approveSttus} 
+		AND student_id = #{id} 
+		AND ei.id = ea.experiment_info_id 
+	</select>
+	
+	<select id="getExperimentArrangeById" resultType="ExperimentAppointment">
+		SELECT 
+		  experiment_starttime AS experimentStarttime,
+		  experiment_endtime AS experimentEndtime,
+		  experiment_info_id AS experimentInfoId,
+		  id AS experimentArrangeId
+		FROM
+		  experiment_arrange 
+		WHERE id = #{id} 
+	</select>
+</mapper>
